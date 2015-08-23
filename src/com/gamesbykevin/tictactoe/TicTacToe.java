@@ -2,10 +2,14 @@ package com.gamesbykevin.tictactoe;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 
 import com.gamesbykevin.tictactoe.panel.GamePanel;
+import com.gamesbykevin.tictactoe.R;
 
 public class TicTacToe extends Activity
 {
@@ -75,5 +79,31 @@ public class TicTacToe extends Activity
     public void onPause()
     {
         super.onPause();
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item)
+    {
+        switch (item.getItemId())
+        {
+            case R.id.menuExit:
+                super.finish();
+                return true;
+                
+            case R.id.menuReset:
+                this.panel.getBoard().reset();
+                break;
+        }
+        
+        return false;
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        super.onCreateOptionsMenu(menu);
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
     }
 }

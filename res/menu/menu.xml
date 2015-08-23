@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/menuReset"
+        android:title="@string/reset_label"
+        android:alphabeticShortcut="@string/reset_shortcut"
+    />
+    <item android:id="@+id/menuExit"
+        android:title="@string/exit_label"
+        android:alphabeticShortcut="@string/exit_shortcut"
+    />
+</menu>

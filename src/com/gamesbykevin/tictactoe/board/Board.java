@@ -4,10 +4,13 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+
+import com.gamesbykevin.androidframework.base.Cell;
+
 import com.gamesbykevin.tictactoe.panel.GamePanel;
 
 /**
- * A tic tac toe board
+ * A tic-tac-toe board
  * @author ABRAHAM
  */
 public final class Board 
@@ -17,9 +20,12 @@ public final class Board
      */
     private int[][] board;
     
-    public static final int EMPTY = 0;
+    public static final int KEY_EMPTY = 0;
     public static final int KEY_X = 1;
     public static final int KEY_O = 2;
+    
+    //is the game over
+    private boolean gameover = false;
     
     /**
      * The default dimensions of our tic-tac-toe board
@@ -29,57 +35,58 @@ public final class Board
     /**
      * The dimensions for each cell
      */
-    public static final int CELL_DIMENSION = 130;
-    
-    //the dimensions of each cell
-    private int cellDimension = CELL_DIMENSION;
+    public static final int CELL_DIMENSION = 120;
     
     //(x, y) coordinates where the board begins
     private int startX, startY;
     
-    //assign paint parameters here to draw the board
-    private Paint paint;
+    //assign paint parameters here to draw the board etc...
+    private Paint backgroundPaint, matchPaint;
     
-    public Board(final int cols, final int rows)
+    //which key won the board
+    private int winningKey;
+    
+    //the locations identifying the match
+    private Cell matchStart, matchEnd;
+    
+    public Board()
     {
         //create a new board with the default dimensions
-        createBoard(cols, rows);
+        createBoard(DEFAULT_BOARD_DIMENSION, DEFAULT_BOARD_DIMENSION);
+    }
+    
+    public void setMatchLocation(final int startCol, final int startRow, final int endCol, final int endRow)
+    {
+        this.matchStart = new Cell(startCol, startRow);
+        this.matchEnd = new Cell(endCol, endRow);
+    }
+    
+    public void setGameover(final boolean gameover)
+    {
+        this.gameover = gameover;
+    }
+    
+    public boolean hasGameover()
+    {
+        return this.gameover;
     }
     
     /**
      * Assign the starting x-coordinate for the first location (0,0)
      * @param startX The x-coordinate
      */
-    public final void setX(final int startX)
+    public final void setX(final double startX)
     {
-        this.startX = startX;
+        this.startX = (int)startX;
     }
     
     /**
      * Assign the starting y-coordinate for the first location (0,0)
      * @param startY The y-coordinate
      */
-    public final void setY(final int startY)
+    public final void setY(final double startY)
     {
-        this.startY = startY;
-    }
-    
-    /**
-     * Assign the dimension of a single cell
-     * @param cellDimension The (width/height) of a single cell
-     */
-    public void assignCellDimension(final int cellDimension)
-    {
-        this.cellDimension = cellDimension;
-    }
-    
-    /**
-     * Get the dimensions of a single cell
-     * @return The (width/height) of a single cell
-     */
-    public int getCellDimension()
-    {
-        return this.cellDimension;
+        this.startY = (int)startY;
     }
     
     /**
@@ -87,7 +94,7 @@ public final class Board
      * @param cols Columns
      * @param rows Rows
      */
-    public final void createBoard(final int cols, final int rows)
+    private void createBoard(final int cols, final int rows)
     {
         //create new board
         this.board = new int[rows][cols];
@@ -95,12 +102,9 @@ public final class Board
         //assign the default values
         reset();
         
-        //assign the cell dimension
-        this.assignCellDimension(CELL_DIMENSION);
-        
         //position board in the middle
-        setX((GamePanel.WIDTH / 2) - (getBoardWidth() / 2));
-        setY((GamePanel.HEIGHT / 2) - (getBoardHeight() / 2));
+        setX((GamePanel.WIDTH * .5) - (getBoardWidth() * .5));
+        setY((GamePanel.HEIGHT * .5) - (getBoardHeight() * .75));
     }
     
     /**
@@ -109,7 +113,7 @@ public final class Board
      */
     public int getBoardWidth()
     {
-        return getBoard()[0].length * getCellDimension();
+        return getBoardKey()[0].length * CELL_DIMENSION;
     }
     
     /**
@@ -118,12 +122,34 @@ public final class Board
      */
     public int getBoardHeight()
     {
-        return getBoard().length * getCellDimension();
+        return getBoardKey().length * CELL_DIMENSION;
     }
     
-    private int[][] getBoard()
+    /**
+     * Get the board key
+     * @return The array containing the keys
+     */
+    public int[][] getBoardKey()
     {
         return this.board;
+    }
+    
+    /**
+     * Get the winning key
+     * @return The key that won the board
+     */
+    public int getWinningKey()
+    {
+        return this.winningKey;
+    }
+    
+    /**
+     * Assign the winning key
+     * @param winningKey The key that won the board
+     */
+    public void setWinningKey(final int winningKey)
+    {
+        this.winningKey = winningKey;
     }
     
     /**
@@ -132,13 +158,13 @@ public final class Board
      * @param row Row
      * @return The key value at the specified location
      */
-    private int getKey(final int col, final int row)
+    public int getKey(final int col, final int row)
     {
-        return getBoard()[row][col];
+        return getBoardKey()[row][col];
     }
     
     /**
-     * Assign a key to the board
+     * Assign a key to the board based on the (x,y) coordinate
      * @param x x-coordinate
      * @param y y-coordinate
      * @param key The key value we want to assign
@@ -146,30 +172,30 @@ public final class Board
      */
     public boolean assignKey(final float x, final float y, final int key)
     {
-        for (int col = 0; col < getBoard()[0].length; col++)
+        for (int col = 0; col < getBoardKey()[0].length; col++)
         {
-            for (int row = 0; row < getBoard().length; row++)
+            for (int row = 0; row < getBoardKey().length; row++)
             {
                 //calculate the corners to check for collision
-                final int x_west = startX + (col * getCellDimension());
-                final int x_east = x_west + getCellDimension();
-                final int y_north = startY + (row * getCellDimension());
-                final int y_south = y_north + getCellDimension();
+                final int x_west = startX + (col * CELL_DIMENSION);
+                final int x_east = x_west + CELL_DIMENSION;
+                final int y_north = startY + (row * CELL_DIMENSION);
+                final int y_south = y_north + CELL_DIMENSION;
                 
                 if (x > x_west && x < x_east && y > y_north && y < y_south)
                 {
-                    if (getKey(col, row) == EMPTY)
+                    switch (getKey(col, row))
                     {
-                        //assign the value
-                        assign(col, row, key);
-                        
-                        //return true since success
-                        return true;
-                    }
-                    else
-                    {
+                        //we can only make a move where empty
+                        case KEY_EMPTY:
+                            assignKey(col, row, key);
+
+                            //return true since success
+                            return true;
+                            
                         //return false since occupied
-                        return false;
+                        default:
+                            return false;
                     }
                 }
             }
@@ -180,14 +206,28 @@ public final class Board
     }
     
     /**
+     * Do we have a match on the board? (a.k.a. # in a row)
+     * @param key The key to check for a match
+     * @return true = yes, false = no
+     */
+    public boolean hasMatch(final int key)
+    {
+        return BoardHelper.hasMatch(this, key);
+    }
+    
+    /**
      * Assign a value to the specified place on the board
      * @param col Column
      * @param row Row
      * @param key The result (O, X, etc...)
      */
-    private void assign(final int col, final int row, final int key)
+    public void assignKey(final int col, final int row, final int key)
     {
-        getBoard()[row][col] = key;
+        getBoardKey()[row][col] = key;
+        
+        //if the board is full set game over
+        if (BoardHelper.isFull(this))
+            setGameover(true);
     }
     
     /**
@@ -195,13 +235,29 @@ public final class Board
      */
     public void reset()
     {
-        for (int col = 0; col < getBoard()[0].length; col++)
+        for (int col = 0; col < getBoardKey()[0].length; col++)
         {
-            for (int row = 0; row < getBoard().length; row++)
+            for (int row = 0; row < getBoardKey().length; row++)
             {
-                assign(col, row, EMPTY);
+                assignKey(col, row, KEY_EMPTY);
             }
         }
+        
+        //no winning key
+        setWinningKey(KEY_EMPTY);
+        
+        //the game is not over
+        setGameover(false);
+    }
+    
+    private int getCellCenterX(final int col)
+    {
+        return (startX + (col * CELL_DIMENSION) + (CELL_DIMENSION / 2));
+    }
+    
+    private int getCellCenterY(final int row)
+    {
+        return (startY + (row * CELL_DIMENSION) + (CELL_DIMENSION / 2));
     }
     
     /**
@@ -215,13 +271,13 @@ public final class Board
         //draw the background
         drawBackground(canvas);
         
-        for (int col = 0; col < getBoard()[0].length; col++)
+        for (int col = 0; col < getBoardKey()[0].length; col++)
         {
-            final int x = startX + (col * getCellDimension()) + (getCellDimension() / 2);
+            final int x = getCellCenterX(col);
             
-            for (int row = 0; row < getBoard().length; row++)
+            for (int row = 0; row < getBoardKey().length; row++)
             {
-                final int y = startY + (row * getCellDimension()) + (getCellDimension() / 2);
+                final int y = (getCellCenterY(row));
                 
                 switch (getKey(col, row))
                 {
@@ -234,11 +290,50 @@ public final class Board
                         break;
                         
                     //do nothing here
-                    case EMPTY:
+                    case KEY_EMPTY:
                     default:
                         break;
                 }
             }
+        }
+        
+        //if the game is over, draw the result
+        if (hasGameover())
+            drawGameover(canvas);
+    }
+    
+    private void drawGameover(final Canvas canvas)
+    {
+        switch (getWinningKey())
+        {
+            //draw the line to highlight the winner
+            case KEY_X:
+            case KEY_O:
+                if (matchStart != null && matchEnd != null)
+                {
+                    //create paint object if not exists
+                    if (matchPaint == null)
+                    {
+                        this.matchPaint = new Paint();
+                        this.matchPaint.setColor(Color.BLUE);
+                        this.matchPaint.setStrokeWidth(15f);
+                    }
+
+                    //calculate coordinates
+                    final int x1 = getCellCenterX((int)matchStart.getCol());
+                    final int y1 = getCellCenterY((int)matchStart.getRow());
+                    final int x2 = getCellCenterX((int)matchEnd.getCol());
+                    final int y2 = getCellCenterY((int)matchEnd.getRow());
+
+                    //draw the match line
+                    canvas.drawLine(x1, y1, x2, y2, matchPaint);
+                }
+                
+                break;
+
+            //it was a draw
+            default:
+                break;
         }
     }
     
@@ -249,24 +344,24 @@ public final class Board
     private void drawBackground(final Canvas canvas)
     {
         //create paint object if it doesn't exist
-        if (this.paint == null)
+        if (this.backgroundPaint == null)
         {
-            this.paint = new Paint();
-            this.paint.setColor(Color.WHITE);
-            this.paint.setStrokeWidth(10f);
+            this.backgroundPaint = new Paint();
+            this.backgroundPaint.setColor(Color.WHITE);
+            this.backgroundPaint.setStrokeWidth(10f);
         }
         else
         {
-            for (int col = 1; col < getBoard()[0].length; col++)
+            for (int col = 1; col < getBoardKey()[0].length; col++)
             {
-                final int x = startX + (col * getCellDimension());
-                canvas.drawLine(x, startY, x, startY + getBoardHeight(), this.paint);
+                final int x = startX + (col * CELL_DIMENSION);
+                canvas.drawLine(x, startY, x, startY + getBoardHeight(), this.backgroundPaint);
             }
 
-            for (int row = 1; row < getBoard().length; row++)
+            for (int row = 1; row < getBoardKey().length; row++)
             {
-                final int y = startY + (row * getCellDimension());
-                canvas.drawLine(startX, y, startX + getBoardWidth(), y, this.paint);
+                final int y = startY + (row * CELL_DIMENSION);
+                canvas.drawLine(startX, y, startX + getBoardWidth(), y, this.backgroundPaint);
             }
         }
     }

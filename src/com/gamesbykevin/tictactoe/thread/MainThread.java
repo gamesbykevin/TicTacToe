@@ -2,7 +2,7 @@ package com.gamesbykevin.tictactoe.thread;
 
 import android.graphics.Canvas;
 import android.view.SurfaceHolder;
-import com.gamesbykevin.androidframework.Animation;
+import com.gamesbykevin.androidframework.base.Animation;
 import static java.lang.Thread.sleep;
 
 import com.gamesbykevin.tictactoe.panel.GamePanel;
@@ -29,7 +29,8 @@ public class MainThread extends Thread
     public static Canvas canvas;
     
     /**
-     * When the game is terminated and recycling variables, this is the maximum number of attempts to stop the thread
+     * When the game is terminated and recycling variables, <br>
+     * this is the maximum number of attempts to stop the thread
      */
     public static final int COMPLETE_THREAD_ATTEMPTS = 1000;
     
@@ -45,16 +46,17 @@ public class MainThread extends Thread
     @Override
     public void run()
     {
+        //track total time elapsed to calculate fps
         long totalTime = 0;
         
-        //the 
+        //the frame count
         int frames = 0;
         
         //the expected amount of time per each update
         final long targetTime = (Animation.MILLISECONDS_PER_SECOND / FPS);
         
         //continue to loop while the thread is running
-        while (running)
+        while (isRunning())
         {
             //get the start time of this update
             final long startTime = System.nanoTime();
@@ -73,9 +75,9 @@ public class MainThread extends Thread
                     //update our game panel
                     this.panel.update();
                     
-                    //if the canvas object exists, render
+                    //if the canvas object was obtained, render
                     if (canvas != null)
-                        this.panel.draw(canvas);
+                        this.panel.onDraw(canvas);
                 }
             }
             catch (Exception e)
@@ -147,6 +149,10 @@ public class MainThread extends Thread
         this.running = running;
     }
     
+    /**
+     * Is the thread running?
+     * @return true = yes, false = no
+     */
     public boolean isRunning()
     {
         return this.running;
