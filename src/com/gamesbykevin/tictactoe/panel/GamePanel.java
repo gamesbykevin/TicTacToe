@@ -1,12 +1,13 @@
 package com.gamesbykevin.tictactoe.panel;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -18,6 +19,8 @@ import com.gamesbykevin.tictactoe.R;
 import com.gamesbykevin.tictactoe.ai.AI;
 import com.gamesbykevin.tictactoe.board.BoardHelper;
 import com.gamesbykevin.tictactoe.thread.MainThread;
+
+import java.util.HashMap;
 
 /**
  * Game Panel class
@@ -44,18 +47,33 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
     //our object used to draw text
     private Paint infoPaint;
     
+    //keep score
     private int winsHuman = 0, winsCpu = 0, ties = 0;
+    
+    private enum SoundEffect
+    {
+        Move, Win, Lose, Tie
+    }
+    
+    //the sounds in our game
+    private HashMap<SoundEffect, MediaPlayer> sounds;
     
     public GamePanel(Context context)
     {
         //call to parent constructor
         super(context);
         
+        //make game panel focusable = true so it can handle events
+        super.setFocusable(true);
+        
         //create new thread
         this.thread = new MainThread(getHolder(), this);
         
-        //make game panel focusable true so it can handle events
-        super.setFocusable(true);
+        this.sounds = new HashMap();
+        this.sounds.put(SoundEffect.Move, MediaPlayer.create(context, R.raw.sound_move));
+        this.sounds.put(SoundEffect.Win, MediaPlayer.create(context, R.raw.sound_win));
+        this.sounds.put(SoundEffect.Lose, MediaPlayer.create(context, R.raw.sound_lose));
+        this.sounds.put(SoundEffect.Tie, MediaPlayer.create(context, R.raw.sound_tie));
     }
     
     public Board getBoard()
@@ -133,6 +151,9 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
                     this.player1turn = !this.player1turn;
                 }
                 
+                //play sound effect
+                sounds.get(SoundEffect.Move).start();
+                
                 trackWinner();
             }
             
@@ -150,11 +171,22 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
         if (getBoard().hasGameover())
         {
             if (getBoard().getWinningKey() == Board.KEY_EMPTY)
+            {
                 this.ties++;
+                this.sounds.get(SoundEffect.Tie).start();
+            }
+            
             if (getBoard().getWinningKey() == Board.KEY_O)
+            {
                 this.winsCpu++;
+                this.sounds.get(SoundEffect.Lose).start();
+            }
+            
             if (getBoard().getWinningKey() == Board.KEY_X)
+            {
                 this.winsHuman++;
+                this.sounds.get(SoundEffect.Win).start();
+            }
         }
     }
     
@@ -193,6 +225,21 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
         this.animationO = null;
         this.animationX = null;
         this.board = null;
+        
+        if (this.sounds != null)
+        {
+            for (SoundEffect key : sounds.keySet())
+            {
+                if (sounds.get(key) != null)
+                {
+                    sounds.get(key).release();
+                    sounds.put(key, null);
+                }
+            }
+            
+            sounds.clear();
+            sounds = null;
+        }
     }
     
     @Override
@@ -263,9 +310,6 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
                 this.infoPaint.setTextSize(36f);
                 this.infoPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
             }
-            
-            int x = 175;
-            int y = 600;
             
             //if not game over indicate whose turn it is
             if (getBoard().hasGameover())
