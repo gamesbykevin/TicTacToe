@@ -1,23 +1,27 @@
 package com.gamesbykevin.tictactoe.panel;
 
-import android.content.Context;
+import android.app.Activity;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.gamesbykevin.androidframework.base.Animation;
+import com.gamesbykevin.androidframework.anim.Animation;
+import com.gamesbykevin.androidframework.awt.Button;
+import com.gamesbykevin.androidframework.resources.Disposable;
 
 import com.gamesbykevin.tictactoe.board.Board;
+import com.gamesbykevin.tictactoe.screen.MainScreen;
 import com.gamesbykevin.tictactoe.R;
 import com.gamesbykevin.tictactoe.ai.AI;
 import com.gamesbykevin.tictactoe.board.BoardHelper;
+import com.gamesbykevin.tictactoe.TicTacToe;
+import com.gamesbykevin.tictactoe.assets.Assets;
 import com.gamesbykevin.tictactoe.thread.MainThread;
 
 import java.util.HashMap;
@@ -26,172 +30,42 @@ import java.util.HashMap;
  * Game Panel class
  * @author ABRAHAM
  */
-public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
+public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Disposable
 {
     //default dimensions of window for this game
-    public static final int WIDTH = 480;
-    public static final int HEIGHT = 800;
+    public static final int WIDTH = 720;
+    public static final int HEIGHT = 1200;
+    
+    //the reference to our activity
+    private final TicTacToe activity;
+    
+    //the object containing our game screens
+    private MainScreen screen;
     
     //our main game thread
-    private final MainThread thread;
+    private MainThread thread;
     
-    //our animations for X and O
-    private Animation animationX, animationO;
-    
-    //the game board
-    private Board board;
-    
-    //track which players turn
-    private boolean player1turn = true;
-    
-    //our object used to draw text
-    private Paint infoPaint;
-    
-    //keep score
-    private int winsHuman = 0, winsCpu = 0, ties = 0;
-    
-    private enum SoundEffect
-    {
-        Move, Win, Lose, Tie
-    }
-    
-    //the sounds in our game
-    private HashMap<SoundEffect, MediaPlayer> sounds;
-    
-    public GamePanel(Context context)
+    /**
+     * Create a new game panel
+     * @param activity Our main activity 
+     */
+    public GamePanel(final TicTacToe activity)
     {
         //call to parent constructor
-        super(context);
+        super(activity);
+        
+        //store context
+        this.activity = activity;
         
         //make game panel focusable = true so it can handle events
         super.setFocusable(true);
         
-        //create new thread
-        this.thread = new MainThread(getHolder(), this);
-        
-        this.sounds = new HashMap();
-        this.sounds.put(SoundEffect.Move, MediaPlayer.create(context, R.raw.sound_move));
-        this.sounds.put(SoundEffect.Win, MediaPlayer.create(context, R.raw.sound_win));
-        this.sounds.put(SoundEffect.Lose, MediaPlayer.create(context, R.raw.sound_lose));
-        this.sounds.put(SoundEffect.Tie, MediaPlayer.create(context, R.raw.sound_tie));
-    }
-    
-    public Board getBoard()
-    {
-        return this.board;
-    }
-    
-    /**
-     * Now that the surface has been created we can create our game objects
-     * @param holder 
-     */
-    @Override
-    public void surfaceCreated(SurfaceHolder holder)
-    {
-        try
-        {
-            //create the animation for the X and O
-            if (this.animationO == null)
-                this.animationO = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.o), 0, 0, 93, 124, 1, 1, 1);
-            if (this.animationX == null)
-                this.animationX = new Animation(BitmapFactory.decodeResource(getResources(), R.drawable.x), 0, 0, 86, 124, 1, 1, 1);
-            
-            //if the board has not been created yet
-            if (getBoard() == null)
-                this.board = new Board();
-            
-            //if the thread hasn't been started yet
-            if (!this.thread.isRunning())
-            {
-                //start the thread
-                this.thread.setRunning(true);
-                this.thread.start();
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
+        //load game resources
+        loadAssets();
     }
     
     @Override
-    public boolean onTouchEvent (MotionEvent event)
-    {
-        //if not player 1 turn or the game is over, no need to continue
-        if (!player1turn || getBoard().hasGameover())
-            return super.onTouchEvent(event);
-        
-        //do nothing on action down
-        if (event.getAction() == MotionEvent.ACTION_DOWN)
-            return true;
-        
-        if (event.getAction() == MotionEvent.ACTION_UP)
-        {
-            //calculate the coordinate offset
-            final float scaleFactorX = (float)WIDTH / getWidth();
-            final float scaleFactorY = (float)HEIGHT / getHeight();
-            
-            //adjust the coordinates
-            final float x = event.getRawX() * scaleFactorX;
-            final float y = event.getRawY() * scaleFactorY;
-            
-            /**
-             * If we are successful assigning the key.<br>
-             * 1. Check for match<br>
-             * 2. If no match switch turns<br>
-             */
-            if (getBoard().assignKey(x, y, Board.KEY_X))
-            {
-                if (getBoard().hasMatch(Board.KEY_X))
-                {
-                    markWin(Board.KEY_X);
-                }
-                else
-                {
-                    this.player1turn = !this.player1turn;
-                }
-                
-                //play sound effect
-                sounds.get(SoundEffect.Move).start();
-                
-                trackWinner();
-            }
-            
-            return true;
-        }
-        
-        return super.onTouchEvent(event);
-    }
-    
-    /**
-     * Make sure we continue to keep score
-     */
-    private void trackWinner()
-    {
-        if (getBoard().hasGameover())
-        {
-            if (getBoard().getWinningKey() == Board.KEY_EMPTY)
-            {
-                this.ties++;
-                this.sounds.get(SoundEffect.Tie).start();
-            }
-            
-            if (getBoard().getWinningKey() == Board.KEY_O)
-            {
-                this.winsCpu++;
-                this.sounds.get(SoundEffect.Lose).start();
-            }
-            
-            if (getBoard().getWinningKey() == Board.KEY_X)
-            {
-                this.winsHuman++;
-                this.sounds.get(SoundEffect.Win).start();
-            }
-        }
-    }
-    
-    @Override
-    public void surfaceDestroyed(SurfaceHolder holder)
+    public void dispose()
     {
         //it could take several attempts to stop the thread
         boolean retry = true;
@@ -206,11 +80,14 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
                 //increase count
                 count++;
                 
-                //set running false, to stop the infinite loop
-                thread.setRunning(false);
-                
-                //wait for thread to finish
-                thread.join();
+                if (thread != null)
+                {
+                    //set running false, to stop the infinite loop
+                    thread.setRunning(false);
+
+                    //wait for thread to finish
+                    thread.join();
+                }
                 
                 //if we made it here, we were successful
                 retry = false;
@@ -221,25 +98,119 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
             }
         }
         
-        //also recycle these objects
-        this.animationO = null;
-        this.animationX = null;
-        this.board = null;
+        //make thread null
+        this.thread = null;
         
-        if (this.sounds != null)
+        if (screen != null)
         {
-            for (SoundEffect key : sounds.keySet())
+            screen.dispose();
+            screen = null;
+        }
+        
+        //recycle asset objects
+        Assets.recycle();
+    }
+    
+    /**
+     * Get the activity
+     * @return The activity reference
+     */
+    public final TicTacToe getActivity()
+    {
+        return this.activity;
+    }
+    
+    /**
+     * Load game resources, if already loaded nothing will happen
+     */
+    private void loadAssets()
+    {
+        //load images
+        Assets.assignImage(Assets.ImageKey.Player_X, BitmapFactory.decodeResource(getResources(), R.drawable.x));
+        Assets.assignImage(Assets.ImageKey.Player_O, BitmapFactory.decodeResource(getResources(), R.drawable.o));
+        Assets.assignImage(Assets.ImageKey.Button_ExitGame, BitmapFactory.decodeResource(getResources(), R.drawable.exitgame));
+        Assets.assignImage(Assets.ImageKey.Button_MoreGames, BitmapFactory.decodeResource(getResources(), R.drawable.moregames));
+        Assets.assignImage(Assets.ImageKey.Button_NewGame_1_Player, BitmapFactory.decodeResource(getResources(), R.drawable.newgame1player));
+        Assets.assignImage(Assets.ImageKey.Button_NewGame_2_Player, BitmapFactory.decodeResource(getResources(), R.drawable.newgame2player));
+        Assets.assignImage(Assets.ImageKey.Button_ResumeGame, BitmapFactory.decodeResource(getResources(), R.drawable.resumegame));
+        Assets.assignImage(Assets.ImageKey.Button_Instructions, BitmapFactory.decodeResource(getResources(), R.drawable.instructions));
+        Assets.assignImage(Assets.ImageKey.Title, BitmapFactory.decodeResource(getResources(), R.drawable.title));
+
+        //load audio
+        Assets.assignAudio(Assets.AudioKey.Win, MediaPlayer.create(getActivity(), R.raw.sound_win));
+        Assets.assignAudio(Assets.AudioKey.Lose, MediaPlayer.create(getActivity(), R.raw.sound_lose));
+        Assets.assignAudio(Assets.AudioKey.Move, MediaPlayer.create(getActivity(), R.raw.sound_move));
+        Assets.assignAudio(Assets.AudioKey.Tie, MediaPlayer.create(getActivity(), R.raw.sound_tie));
+    }
+    
+    /**
+     * Now that the surface has been created we can create our game objects
+     * @param holder 
+     */
+    @Override
+    public void surfaceCreated(SurfaceHolder holder)
+    {
+        try
+        {
+            //load game resources
+            loadAssets();
+            
+            //make sure the screen is created first before the thread starts
+            if (this.screen == null)
+                this.screen = new MainScreen(this);
+
+            //if the thread does not exist, create it
+            if (this.thread == null)
+                this.thread = new MainThread(getHolder(), this);
+
+            //if the thread hasn't been started yet
+            if (!this.thread.isRunning())
             {
-                if (sounds.get(key) != null)
-                {
-                    sounds.get(key).release();
-                    sounds.put(key, null);
-                }
+                //start the thread
+                this.thread.setRunning(true);
+                this.thread.start();
             }
             
-            sounds.clear();
-            sounds = null;
         }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+    
+    @Override
+    public boolean onTouchEvent(final MotionEvent event)
+    {
+        try
+        {
+            if (this.screen != null)
+            {
+                //calculate the coordinate offset
+                final float scaleFactorX = (float)WIDTH / getWidth();
+                final float scaleFactorY = (float)HEIGHT / getHeight();
+
+                //adjust the coordinates
+                final float x = event.getRawX() * scaleFactorX;
+                final float y = event.getRawY() * scaleFactorY;
+
+                //update the events
+                return this.screen.update(event, x, y);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        
+        return super.onTouchEvent(event);
+    }
+    
+    @Override
+    public void surfaceDestroyed(SurfaceHolder holder)
+    {
+        //pause the game
+        if (screen != null)
+            screen.setState(MainScreen.State.Paused);
     }
     
     @Override
@@ -253,92 +224,35 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback
      */
     public void update()
     {
-        //if it is the cpu's turn and the game isn't over
-        if (!player1turn && !getBoard().hasGameover())
+        try
         {
-            //analyze and perform move
-            AI.analyze(getBoard(), Board.KEY_O, Board.KEY_X);
-            
-            //if there is a match mark the win
-            if (getBoard().hasMatch(Board.KEY_O))
-                markWin(Board.KEY_O);
-            
-            //switch turns
-            this.player1turn = !this.player1turn;
-            
-            //track winner
-            trackWinner();
+            if (screen != null)
+                screen.update();
         }
-    }
-    
-    /**
-     * 
-     * @param key 
-     */
-    private void markWin(final int key)
-    {
-        getBoard().setWinningKey(key);
-        getBoard().setGameover(true);
-        BoardHelper.markMatch(getBoard(), key);
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
     }
     
     @Override
     public void onDraw(Canvas canvas)
     {
-        //calculate the screen ratio
-        final float scaleFactorX = getWidth() / (float)WIDTH;
-        final float scaleFactorY = getHeight() / (float)HEIGHT;
-        
         if (canvas != null)
         {
             //store the canvas state
             final int savedState = canvas.save();
             
-            //fill canvas with black color
-            canvas.drawColor(Color.BLACK);
-            
-            //scale to the screen size
-            canvas.scale(scaleFactorX, scaleFactorY);
-            
-            //render board game elements
-            getBoard().draw(canvas, animationX.getImage(), animationO.getImage());
-            
-            if (this.infoPaint == null)
+            try
             {
-                this.infoPaint = new Paint();
-                this.infoPaint.setColor(Color.WHITE);
-                this.infoPaint.setTextSize(36f);
-                this.infoPaint.setTypeface(Typeface.create(Typeface.DEFAULT, Typeface.BOLD));
+                //make sure the screen object exists
+                if (screen != null)
+                    screen.render(canvas);
             }
-            
-            //if not game over indicate whose turn it is
-            if (getBoard().hasGameover())
+            catch (Exception e)
             {
-                //text description
-                final String text;
-                
-                switch (getBoard().getWinningKey())
-                {
-                    case Board.KEY_O:
-                        text = "Cpu wins";
-                        break;
-                        
-                    case Board.KEY_X:
-                        text = "Human wins";
-                        break;
-                        
-                    default:
-                    case Board.KEY_EMPTY:
-                        text = "Tie game";
-                        break;
-                }
-                
-                canvas.drawText(text + ": hit 'Menu'", 70, 575, infoPaint);
+                e.printStackTrace();
             }
-            
-            canvas.drawText("Human: " + this.winsHuman, 70, 635, infoPaint);
-            canvas.drawText("Cpu: " + this.winsCpu, 70, 675, infoPaint);
-            canvas.drawText("Tie: " + this.ties, 70, 715, infoPaint);
             
             //restore previous canvas state
             canvas.restoreToCount(savedState);

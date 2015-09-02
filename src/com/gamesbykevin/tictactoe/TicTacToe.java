@@ -8,13 +8,25 @@ import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
 
+import android.content.Intent;
+import android.net.Uri;
+
 import com.gamesbykevin.tictactoe.panel.GamePanel;
-import com.gamesbykevin.tictactoe.R;
 
 public class TicTacToe extends Activity
 {
     //our game panel
     private GamePanel panel;
+    
+    /**
+     * The website address we want to navigate to
+     */
+    public static final String WEBPAGE_URL = "http://gamesbykevin.com";
+
+    /**
+     * The url address where the instructions are
+     */
+    public static final String INSTRUCTIONS_URL = "http://www.wikihow.com/Play-Tic-Tac-Toe";
     
     /**
      * This is called when the activity is first created
@@ -23,6 +35,7 @@ public class TicTacToe extends Activity
     @Override
     public void onCreate(Bundle savedInstanceState)
     {
+        //call parent create
         super.onCreate(savedInstanceState);
         
         //turn the title off
@@ -32,17 +45,17 @@ public class TicTacToe extends Activity
         super.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
         //if the panel has not been created
-        if (this.panel == null)
+        if (getGamePanel() == null)
         {
             //create the game panel
-            panel = new GamePanel(this);
+            setGamePanel(new GamePanel(this));
 
             //add callback to the game panel to intercept events
-            panel.getHolder().addCallback(panel);
+            getGamePanel().getHolder().addCallback(getGamePanel());
         }
 
         //set the content view to our game
-        setContentView(panel);
+        setContentView(getGamePanel());
     }
     
     /**
@@ -69,6 +82,16 @@ public class TicTacToe extends Activity
     @Override
     public void onDestroy()
     {
+        //finish the current activity
+        super.finish();
+        
+        if (getGamePanel() != null)
+        {
+            getGamePanel().dispose();
+            setGamePanel(null);
+        }
+        
+        //perform final cleanup
         super.onDestroy();
     }
     
@@ -86,18 +109,41 @@ public class TicTacToe extends Activity
     {
         switch (item.getItemId())
         {
+            /*
             case R.id.menuExit:
                 super.finish();
                 return true;
-                
+            
             case R.id.menuReset:
-                this.panel.getBoard().reset();
+                //getGamePanel().getBoard().reset();
                 break;
+                
+            case R.id.menuWebpage:
+                openWebpage();
+                break;
+            */
         }
         
         return false;
     }
     
+    /**
+     * Navigate to the desired web page
+     * @param url The desired url
+     */
+    public void openWebpage(final String url)
+    {
+        //create action view intent
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        
+        //the content will be the web page
+        intent.setData(Uri.parse(url));
+        
+        //start this new activity
+        startActivity(intent);        
+    }
+    
+    /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
@@ -105,5 +151,24 @@ public class TicTacToe extends Activity
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu, menu);
         return true;
+    }
+    */
+    
+    /**
+     * Get the game panel.
+     * @return The object containing our game logic, assets, threads, etc...
+     */
+    private GamePanel getGamePanel()
+    {
+        return this.panel;
+    }
+    
+    /**
+     * Assign the game panel
+     * @param panel The game panel
+     */
+    private void setGamePanel(final GamePanel panel)
+    {
+        this.panel = panel;
     }
 }

@@ -2,7 +2,7 @@ package com.gamesbykevin.tictactoe.thread;
 
 import android.graphics.Canvas;
 import android.view.SurfaceHolder;
-import com.gamesbykevin.androidframework.base.Animation;
+import com.gamesbykevin.androidframework.anim.Animation;
 import static java.lang.Thread.sleep;
 
 import com.gamesbykevin.tictactoe.panel.GamePanel;
@@ -13,6 +13,11 @@ import com.gamesbykevin.tictactoe.panel.GamePanel;
  */
 public class MainThread extends Thread
 {
+    /**
+     * Is debug mode enabled?
+     */
+    public static final boolean DEBUG = true;
+    
     //the assigned fps for this game
     private static final int FPS = 30;
     
@@ -55,94 +60,111 @@ public class MainThread extends Thread
         //the expected amount of time per each update
         final long targetTime = (Animation.MILLISECONDS_PER_SECOND / FPS);
         
-        //continue to loop while the thread is running
-        while (isRunning())
+        try
         {
-            //get the start time of this update
-            final long startTime = System.nanoTime();
-            
-            //assign the canvas null
-            canvas = null;
-            
-            try 
+            //continue to loop while the thread is running
+            while (isRunning())
             {
-                //attempt to lock the canvas to edit the pixels of the surface
-                canvas = holder.lockCanvas();
-                
-                //make sure no other threads are accessing the holder
-                synchronized (holder)
+                //get the start time of this update
+                final long startTime = System.nanoTime();
+
+                //assign the canvas null
+                canvas = null;
+
+                try 
                 {
-                    //update our game panel
-                    this.panel.update();
-                    
-                    //if the canvas object was obtained, render
+                    //attempt to lock the canvas to edit the pixels of the surface
+                    canvas = holder.lockCanvas();
+
+                    //make sure no other threads are accessing the holder
+                    synchronized (holder)
+                    {
+                        //update our game panel
+                        this.panel.update();
+
+                        //if the canvas object was obtained, render
+                        if (canvas != null)
+                            this.panel.onDraw(canvas);
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+                finally 
+                {
+                    //remove the lock (if possible)
                     if (canvas != null)
-                        this.panel.onDraw(canvas);
+                    {
+                        try
+                        {
+                            //render the pixels on the canvas to the screen
+                            holder.unlockCanvasAndPost(canvas);
+                        }
+                        catch (Exception e)
+                        {
+                            e.printStackTrace();
+                        }
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            finally 
-            {
-                //remove the lock (if possible)
-                if (canvas != null)
+
+                //calculate the number of milliseconds elapsed
+                final long timeMillis = (System.nanoTime() - startTime) / Animation.NANO_SECONDS_PER_MILLISECOND;
+
+                //determine the amount of time to sleep
+                long waitTime = targetTime - timeMillis;
+
+                //make sure the wait time is at least 1 millisecond
+                if (waitTime < 1)
+                    waitTime = 1;
+                
+                try
                 {
-                    try
+                    //sleep the thread
+                    sleep(waitTime);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+
+                //if we are debugging, print the fps
+                if (DEBUG)
+                {
+                    //calculate the total time passed
+                    totalTime += System.nanoTime() - startTime;
+
+                    //increase the frame count
+                    frames++;
+
+                    //if the frame count = the assigned fps
+                    if (frames == FPS)
                     {
-                        //render the pixels on the canvas to the screen
-                        holder.unlockCanvasAndPost(canvas);
-                    }
-                    catch (Exception e)
-                    {
-                        e.printStackTrace();
+                        //calculate the average fps
+                        final double fpsAverage = (double)Animation.MILLISECONDS_PER_SECOND / ((double)(totalTime / frames) / Animation.NANO_SECONDS_PER_MILLISECOND);
+
+                        //reset these values
+                        frames = 0;
+                        totalTime = 0;
+
+                        //display the average
+                        System.out.println("Average FPS " + fpsAverage);
                     }
                 }
-            }
-            
-            //calculate the number of milliseconds elapsed
-            final long timeMillis = (System.nanoTime() - startTime) / Animation.NANO_SECONDS_PER_MILLISECOND;
-            
-            //determine the amount of time to sleep
-            final long waitTime = targetTime - timeMillis;
-            
-            try
-            {
-                //only sleep if the waitTime has a value
-                if (waitTime > 0)
-                    sleep(waitTime);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            
-            //calculate the total time passed
-            totalTime += System.nanoTime() - startTime;
-            
-            //increase the frame count
-            frames++;
-            
-            //if the frame count = the assigned fps
-            if (frames == FPS)
-            {
-                //calculate the average fps
-                final double fpsAverage = (double)Animation.MILLISECONDS_PER_SECOND / ((double)(totalTime / frames) / Animation.NANO_SECONDS_PER_MILLISECOND);
-                
-                //reset these values
-                frames = 0;
-                totalTime = 0;
-                
-                //display the average
-                System.out.println("Average FPS " + fpsAverage);
             }
         }
+        catch (Exception ex)
+        {
+            ex.printStackTrace();
+        }
+
+        //stop thread
+        this.setRunning(false);
     }
     
     /**
-     * Assign the running value
-     * @param running Is the thread running? true = yes, false = no
+     * Assign the thread to run.
+     * @param running true the thread will continue to loop, false the thread will finish
      */
     public void setRunning(final boolean running)
     {
@@ -150,7 +172,7 @@ public class MainThread extends Thread
     }
     
     /**
-     * Is the thread running?
+     * Is the thread set to run?
      * @return true = yes, false = no
      */
     public boolean isRunning()

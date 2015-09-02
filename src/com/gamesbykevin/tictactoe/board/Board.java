@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import com.gamesbykevin.androidframework.base.Cell;
+import com.gamesbykevin.androidframework.resources.Disposable;
 
 import com.gamesbykevin.tictactoe.panel.GamePanel;
 
@@ -13,7 +14,7 @@ import com.gamesbykevin.tictactoe.panel.GamePanel;
  * A tic-tac-toe board
  * @author ABRAHAM
  */
-public final class Board 
+public final class Board implements Disposable
 {
     /**
      * The solution key for the board
@@ -33,9 +34,19 @@ public final class Board
     public static final int DEFAULT_BOARD_DIMENSION = 3;
     
     /**
+     * How thick the line is for a board with a match
+     */
+    public static final float BOARD_MATCH_THICKNESS = 25f;
+    
+    /**
+     * How thick the outline of the board is
+     */
+    public static final float BOARD_OUTLINE_THICKNESS = 10f;
+    
+    /**
      * The dimensions for each cell
      */
-    public static final int CELL_DIMENSION = 120;
+    public static final int CELL_DIMENSION = 230;
     
     //(x, y) coordinates where the board begins
     private int startX, startY;
@@ -53,6 +64,15 @@ public final class Board
     {
         //create a new board with the default dimensions
         createBoard(DEFAULT_BOARD_DIMENSION, DEFAULT_BOARD_DIMENSION);
+    }
+    
+    @Override
+    public void dispose()
+    {
+        this.matchEnd = null;
+        this.matchStart = null;
+        this.matchPaint = null;
+        this.backgroundPaint = null;
     }
     
     public void setMatchLocation(final int startCol, final int startRow, final int endCol, final int endRow)
@@ -90,6 +110,24 @@ public final class Board
     }
     
     /**
+     * Get the starting x-coordinate of the board
+     * @return The starting x-coordinate of the north west cell
+     */
+    public int getX()
+    {
+        return this.startX;
+    }
+    
+    /**
+     * Get the starting y-coordinate of the board
+     * @return The starting y-coordinate of the north west cell
+     */
+    public int getY()
+    {
+        return this.startY;
+    }
+    
+    /**
      * Create a new board of the specified dimensions
      * @param cols Columns
      * @param rows Rows
@@ -104,7 +142,7 @@ public final class Board
         
         //position board in the middle
         setX((GamePanel.WIDTH * .5) - (getBoardWidth() * .5));
-        setY((GamePanel.HEIGHT * .5) - (getBoardHeight() * .75));
+        setY((GamePanel.HEIGHT * .5) - (getBoardHeight() * .6));
     }
     
     /**
@@ -316,7 +354,7 @@ public final class Board
                     {
                         this.matchPaint = new Paint();
                         this.matchPaint.setColor(Color.BLUE);
-                        this.matchPaint.setStrokeWidth(15f);
+                        this.matchPaint.setStrokeWidth(BOARD_MATCH_THICKNESS);
                     }
 
                     //calculate coordinates
@@ -348,7 +386,7 @@ public final class Board
         {
             this.backgroundPaint = new Paint();
             this.backgroundPaint.setColor(Color.WHITE);
-            this.backgroundPaint.setStrokeWidth(10f);
+            this.backgroundPaint.setStrokeWidth(BOARD_OUTLINE_THICKNESS);
         }
         else
         {

@@ -8,4 +8,8 @@
         android:title="@string/exit_label"
         android:alphabeticShortcut="@string/exit_shortcut"
     />
+    <item android:id="@+id/menuWebpage"
+        android:title="@string/webpage_label"
+        android:alphabeticShortcut="@string/webpage_shortcut"
+    />
 </menu>
