@@ -1,30 +1,19 @@
 package com.gamesbykevin.tictactoe.panel;
 
-import android.app.Activity;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.gamesbykevin.androidframework.anim.Animation;
-import com.gamesbykevin.androidframework.awt.Button;
 import com.gamesbykevin.androidframework.resources.Disposable;
 
-import com.gamesbykevin.tictactoe.board.Board;
 import com.gamesbykevin.tictactoe.screen.MainScreen;
 import com.gamesbykevin.tictactoe.R;
-import com.gamesbykevin.tictactoe.ai.AI;
-import com.gamesbykevin.tictactoe.board.BoardHelper;
 import com.gamesbykevin.tictactoe.TicTacToe;
 import com.gamesbykevin.tictactoe.assets.Assets;
 import com.gamesbykevin.tictactoe.thread.MainThread;
-
-import java.util.HashMap;
 
 /**
  * Game Panel class
@@ -121,7 +110,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
     }
     
     /**
-     * Load game resources, if already loaded nothing will happen
+     * Load game resources, if a resource is already loaded nothing will happen
      */
     private void loadAssets()
     {

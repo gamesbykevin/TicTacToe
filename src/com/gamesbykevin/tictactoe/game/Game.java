@@ -12,7 +12,6 @@ import com.gamesbykevin.tictactoe.ai.AI;
 import com.gamesbykevin.tictactoe.assets.Assets;
 import com.gamesbykevin.tictactoe.board.Board;
 import com.gamesbykevin.tictactoe.board.BoardHelper;
-import com.gamesbykevin.tictactoe.panel.GamePanel;
 import com.gamesbykevin.tictactoe.screen.MainScreen;
 
 /**
