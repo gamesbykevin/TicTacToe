@@ -29,6 +29,11 @@ public class TicTacToe extends Activity
     public static final String INSTRUCTIONS_URL = "http://www.wikihow.com/Play-Tic-Tac-Toe";
     
     /**
+     * The url address where the application is
+     */
+    public static final String APP_URL = "https://play.google.com/store/apps/details?id=com.gamesbykevin.tictactoe";
+    
+    /**
      * This is called when the activity is first created
      * @param savedInstanceState 
      */

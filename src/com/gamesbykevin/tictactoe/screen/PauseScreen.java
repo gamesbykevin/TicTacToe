@@ -18,7 +18,7 @@ import com.gamesbykevin.tictactoe.assets.Assets;
  */
 public class PauseScreen implements Screen, Disposable
 {
-    //our main screen
+    //our main screen reference
     private final MainScreen screen;
     
     //the buttons on this screen
@@ -75,7 +75,7 @@ public class PauseScreen implements Screen, Disposable
     public void render(final Canvas canvas) throws Exception
     {
         //resume button
-        this.resumeGame.draw(canvas);
+        this.resumeGame.render(canvas);
     }
     
     @Override

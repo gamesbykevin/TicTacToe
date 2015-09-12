@@ -29,6 +29,7 @@ public class Assets
         Button_ExitGame, 
         Button_ResumeGame, 
         Button_Instructions,
+        Button_RateGame, 
         Title
     }
     

@@ -123,6 +123,7 @@ public class GamePanel extends SurfaceView implements SurfaceHolder.Callback, Di
         Assets.assignImage(Assets.ImageKey.Button_NewGame_2_Player, BitmapFactory.decodeResource(getResources(), R.drawable.newgame2player));
         Assets.assignImage(Assets.ImageKey.Button_ResumeGame, BitmapFactory.decodeResource(getResources(), R.drawable.resumegame));
         Assets.assignImage(Assets.ImageKey.Button_Instructions, BitmapFactory.decodeResource(getResources(), R.drawable.instructions));
+        Assets.assignImage(Assets.ImageKey.Button_RateGame, BitmapFactory.decodeResource(getResources(), R.drawable.rategame));
         Assets.assignImage(Assets.ImageKey.Title, BitmapFactory.decodeResource(getResources(), R.drawable.title));
 
         //load audio
