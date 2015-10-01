@@ -65,6 +65,11 @@ public class PauseScreen implements Screen, Disposable
         return true;
     }
     
+    public void reset()
+    {
+        
+    }
+    
     @Override
     public void update() throws Exception
     {

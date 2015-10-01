@@ -63,6 +63,11 @@ public final class MainScreen implements Screen, Disposable
         this.pauseScreen = new PauseScreen(this);
     }
     
+    public void reset()
+    {
+        
+    }
+    
     public boolean update(final MotionEvent event, final float x, final float y) throws Exception
     {
         switch (getState())

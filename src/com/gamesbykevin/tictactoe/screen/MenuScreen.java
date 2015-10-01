@@ -75,6 +75,11 @@ public class MenuScreen implements Screen, Disposable
         }
     }
     
+    public void reset()
+    {
+        
+    }
+    
     @Override
     public boolean update(final MotionEvent event, final float x, final float y) throws Exception
     {
